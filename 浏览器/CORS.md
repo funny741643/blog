@@ -65,3 +65,77 @@ CORS是一个W3C标准，全称是"跨域资源共享"（Cross-origin resource s
 
 ## 非简单请求
 
+非简单请求是那种对服务器有特殊要求的请求，比如请求方法是`PUT`或`DELETE`，或者`Content-Type`字段的类型是`application/json`。
+
+非简单请求的CORS请求，会在正式通信之前，增加一次HTTP查询请求，称为**"预检"请求**（preflight）。
+
+### 预检请求头信息
+
+```http
+OPTIONS /cors HTTP/1.1
+Origin: http://api.bob.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: X-Custom-Header
+Host: api.alice.com
+Accept-Language: en-US
+Connection: keep-alive
+User-Agent: Mozilla/5.0...
+```
+
+* 预检请求的方法为**OPTIONS**
+
+* **Access-Control-Request-Method**
+
+  用来列出浏览器的CORS请求会用到哪些HTTP方法
+
+* **Access-Control-Request-Headers**
+
+### 预检请求的响应
+
+```http
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:15:39 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://api.bob.com
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: X-Custom-Header
+Content-Type: text/html; charset=utf-8
+Content-Encoding: gzip
+Content-Length: 0
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Content-Type: text/plain
+```
+
+**失败**
+
+如果服务器否定了"预检"请求，会返回一个正常的HTTP回应，但是没有任何CORS相关的头信息字段。这时，浏览器就会认定，服务器不同意预检请求，因此触发一个错误，被`XMLHttpRequest`对象的`onerror`回调函数捕获。
+
+**成功**
+
+```http
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: X-Custom-Header
+Access-Control-Allow-Credentials: true
+Access-Control-Max-Age: 1728000
+```
+
+* **Access-Control-Allow-Origin**
+
+  表示服务器允许该源的请求
+
+* **Access-Control-Allow-Methods**
+
+  表明服务器支持的所有跨域请求的方法。
+
+* **Access-Control-Allow-Headers**
+
+  表明服务器支持的所有头信息字段，不限于浏览器在"预检"中请求的字段。
+
+* **Access-Control-Allow-Credentials**
+
+  同简单请求
+
+* **Access-Control-Max-Age**
+
+  用来指定本次预检请求的有效期，单位为秒。在有效期间内浏览器不用发出另一条预检请求。
